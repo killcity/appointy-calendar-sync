@@ -3,15 +3,5 @@ node_modules/
 .env*.local
 *.log
 
-# Playwright
-playwright-report/
-test-results/
-
-# Cache
-.cache/
-
-# Vercel
-.vercel
-
-# Data directory (contains sensitive config)
+# Local data (contains sensitive config)
 data/
