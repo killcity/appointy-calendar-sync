@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  calendar:
+    build: .
+    container_name: appointy-calendar
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - PORT=3000
+      - DATA_DIR=/data
+    volumes:
+      - calendar-data:/data
+    # Chrome needs these for stability
+    shm_size: '1gb'
+
+volumes:
+  calendar-data:
