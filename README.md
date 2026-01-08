@@ -1,110 +1,71 @@
 # Appointy Calendar Sync
 
-Syncs your Appointy bookings (from the customer portal) to an iCal feed that you can subscribe to from Apple Calendar.
+Sync your Appointy bookings to an iCal calendar feed. Subscribe in Apple Calendar, Google Calendar, or any calendar app that supports webcal subscriptions.
 
-## The Problem
+## Features
 
-Appointy's built-in calendar sync only works for business owners. If you're a **customer** viewing your bookings at `/my-bookings`, there's no official way to sync those to your personal calendar.
+- **Automated scraping** with Puppeteer and stealth mode to bypass Cloudflare
+- **Lazy-load handling** - automatically scrolls to load all appointments
+- **15-minute cache** - reduces load on Appointy servers
+- **Token-protected** calendar URL
+- **Admin panel** for easy configuration
+- **Docker deployment** - runs on any x86_64 machine
 
-This tool scrapes your booking page and generates a subscribable iCal feed.
-
-## Deploy to Vercel
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fkillcity%2Fappointy-calendar-sync)
-
-### Required Environment Variables
-
-Set these in your Vercel project settings:
-
-| Variable | Description |
-|----------|-------------|
-| `CALENDAR_TOKEN` | Secret token to protect your calendar (generate with `node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"`) |
-| `BROWSERLESS_TOKEN` | API key from [browserless.io](https://browserless.io) (free tier: 1000 req/month) |
-| `APPOINTY_EMAIL` | Your Appointy login email |
-| `APPOINTY_PASSWORD` | Your Appointy password |
-| `APPOINTY_BOOKING_URL` | Your booking URL (e.g., `https://mathnasium-booking.appointy.com/portlandme/my-bookings`) |
-
-### Optional Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `CALENDAR_NAME` | "Mathnasium Appointments" | Name shown in your calendar app |
-
-## Subscribe to Your Calendar
-
-Once deployed, your calendar URL will be:
-
-```
-https://your-app.vercel.app/cal/YOUR_TOKEN/calendar.ics
-```
-
-Or:
-
-```
-https://your-app.vercel.app/api/calendar/YOUR_TOKEN
-```
-
-### Apple Calendar (macOS)
-1. File → New Calendar Subscription
-2. Paste your full URL with token
-3. Set auto-refresh to "Every hour"
-
-### Apple Calendar (iOS)
-1. Settings → Calendar → Accounts → Add Account → Other
-2. Add Subscribed Calendar
-3. Paste your full URL with token
-
-## Local Development
+## Quick Start (Docker)
 
 ```bash
-# Install dependencies
-npm install
+# Clone and enter directory
+git clone https://github.com/killcity/appointy-calendar-sync.git
+cd appointy-calendar-sync
 
-# Copy env template
-cp env.template .env
-# Edit .env with your credentials
+# Build and run
+docker-compose up -d
 
-# Run locally
-npm start
+# Access admin panel
+open http://localhost:3000/admin
 ```
 
-## API Endpoints
+## Setup
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /` | Homepage with setup instructions |
-| `GET /api/calendar/:token` | iCal feed (protected) |
-| `GET /cal/:token/calendar.ics` | iCal feed alias (protected) |
-| `GET /api/health` | Health check (shows which env vars are set) |
+1. **Access the admin panel** at `http://YOUR_IP:3000/admin`
+2. **First-time setup**: Enter admin password, Appointy email/password, and booking URL
+3. **Get your calendar URL** from the admin panel
+4. **Subscribe** in your calendar app using the webcal URL
 
-## How It Works
+## Calendar Subscription
 
-1. Uses [Browserless.io](https://browserless.io) for cloud browser automation (works on Vercel serverless)
-2. Logs into your Appointy customer portal
-3. Extracts appointment data from the bookings page
-4. Generates an iCal calendar with reminders
-5. Caches for 15 minutes to avoid hammering Appointy
+**WebCal URL format:**
+```
+webcal://YOUR_IP:3000/calendar/YOUR_TOKEN
+```
 
-## Troubleshooting
+**Apple Calendar:**
+1. File → New Calendar Subscription
+2. Paste the URL
+3. Set refresh to "Every hour"
 
-### "BROWSERLESS_TOKEN not configured"
-Get a free API key at [browserless.io](https://browserless.io). The free tier includes 1000 requests/month.
+## Files
 
-### No appointments found
-1. Verify your Appointy credentials are correct
-2. Check that you have upcoming appointments
-3. The page structure may have changed - open an issue
+```
+├── src/
+│   └── server.js      # Main application (Express + Puppeteer)
+├── Dockerfile         # Docker image with Chrome
+├── docker-compose.yml # Container orchestration
+└── package.json       # Dependencies
+```
 
-### Login failed
-1. Verify credentials in Vercel environment variables
-2. Make sure your Appointy account doesn't have 2FA enabled
-3. Try logging in manually to confirm the account works
+## Technical Details
 
-## Security
+- **Base image**: `zenika/alpine-chrome:with-node` (~300MB)
+- **Browser**: Chromium with puppeteer-extra stealth plugin
+- **Cache TTL**: 15 minutes
+- **Scrape time**: 3-5 minutes (login + scroll through all appointments)
 
-- Your calendar is protected by a secret token
-- Credentials are stored as environment variables (never in code)
-- Token comparison uses constant-time comparison to prevent timing attacks
+## Refresh Behavior
+
+- Calendar data cached for 15 minutes
+- Calendar apps typically refresh hourly
+- Force refresh: add `?refresh=true` to calendar URL
 
 ## License
 
